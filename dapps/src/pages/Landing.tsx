@@ -18,10 +18,10 @@ export function Landing() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.2 }}
-        className="mb-6 inline-flex items-center gap-2 px-3 py-1 border border-eve-green/30 bg-eve-green/10 rounded-full text-eve-green text-xs font-mono tracking-widest"
+        className="mb-6 inline-flex items-center gap-2 px-4 py-3 border border-eve-green/30 bg-eve-green/10 rounded-full text-eve-green text-xs font-mono tracking-widest"
       >
         <Globe className="w-3 h-3" />
-        <span>EVE FRONTIER NETWORK ACTIVE</span>
+        <span className="mb-0">EVE FRONTIER NETWORK ACTIVE</span>
       </motion.div>
 
       <motion.h1 

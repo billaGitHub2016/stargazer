@@ -23,7 +23,10 @@ export function Layout() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            <Hexagon className="w-6 h-6 text-eve-green group-hover:text-eve-white transition-colors duration-300" />
+            <div className="relative flex items-center justify-center w-8 h-8">
+              <Hexagon className="absolute inset-0 w-full h-full text-eve-green group-hover:text-eve-white transition-colors duration-300" strokeWidth={1.5} />
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-mono font-bold text-eve-green group-hover:text-eve-white transition-colors duration-300 text-sm">S</span>
+            </div>
             <h1 className="font-mono text-xl tracking-[0.2em] font-bold">STARGAZER</h1>
           </motion.div>
 

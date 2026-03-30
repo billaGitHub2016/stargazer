@@ -28,7 +28,13 @@ export function GatePayment() {
     try {
       const tx = new Transaction();
       
-      const [paymentCoin] = tx.splitCoins(tx.gas, [tx.pure.u64(rule.feeAmount)]);
+      // Let the user pay the fee directly from their gas coin
+      // The amount is automatically checked by the contract
+      const feeAmountMist = tx.pure.u64(rule.feeAmount);
+      
+      // Instead of splitting a separate coin, we just pass a split of the gas coin
+      // Sui Wallet and others handle this pattern natively
+      const [paymentCoin] = tx.splitCoins(tx.gas, [feeAmountMist]);
 
       tx.moveCall({
         target: `${PACKAGE_ID}::stargazer::pay_toll_only`,
