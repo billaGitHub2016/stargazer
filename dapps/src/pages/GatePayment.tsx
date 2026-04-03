@@ -1,8 +1,9 @@
 import { useParams } from "react-router-dom";
 import { useCurrentAccount, useDAppKit } from "@mysten/dapp-kit-react";
 import { useConnection } from "@evefrontier/dapp-kit";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useTollRule } from "../hooks/useTollRules";
+import { decodeRuleId } from "../utils/shortLink";
 import { PACKAGE_ID } from "../config/constants";
 import { Transaction } from "@mysten/sui/transactions";
 import { MIST_PER_SUI } from "@mysten/sui/utils";
@@ -11,10 +12,11 @@ import { motion } from "framer-motion";
 import { ShieldCheck, Zap, AlertTriangle, Fingerprint } from "lucide-react";
 
 export function GatePayment() {
-  const { ruleId } = useParams();
+  const { ruleId: rawRuleId } = useParams();
   const account = useCurrentAccount();
   const { handleConnect } = useConnection();
-  const { data: rule, isLoading } = useTollRule(ruleId);
+  
+  const { data: rule, isLoading } = useTollRule(rawRuleId);
   const { signAndExecuteTransaction } = useDAppKit();
 
   const [isPaying, setIsPaying] = useState(false);
@@ -35,21 +37,21 @@ export function GatePayment() {
       // Instead of splitting a separate coin, we just pass a split of the gas coin
       // Sui Wallet and others handle this pattern natively
       const [paymentCoin] = tx.splitCoins(tx.gas, [feeAmountMist]);
-
-      tx.moveCall({
-        target: `${PACKAGE_ID}::stargazer::pay_toll_only`,
-        arguments: [
-          tx.object(rule.id),
-          paymentCoin,
-        ],
-      });
+        
+        tx.moveCall({
+          target: `${PACKAGE_ID}::stargazer::pay_toll_only`,
+          arguments: [
+            tx.object(rule.id),
+            paymentCoin,
+          ],
+        });
 
       await signAndExecuteTransaction({ transaction: tx });
       toast.success("Payment successful! Jump Permit Issued.", { id: toastId });
       setPaid(true);
     } catch (e: any) {
-      console.error(e);
-      toast.error(`Payment failed: ${e.message.slice(0, 50)}...`, { id: toastId });
+      console.error('gate payment: ', e);
+      toast.error(`Payment failed: ${e.message}`, { id: toastId });
     } finally {
       setIsPaying(false);
     }

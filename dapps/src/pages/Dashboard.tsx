@@ -2,11 +2,12 @@ import { useCurrentAccount, useDAppKit } from "@mysten/dapp-kit-react";
 import { Transaction } from "@mysten/sui/transactions";
 import { useState } from "react";
 import { useTollRules } from "../hooks/useTollRules";
+import { encodeRuleId } from "../utils/shortLink";
 import { PACKAGE_ID } from "../config/constants";
 import { MIST_PER_SUI } from "@mysten/sui/utils";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
-import { Plus, Edit2, Wallet, ExternalLink, Settings, ShieldAlert } from "lucide-react";
+import { Plus, Edit2, Wallet, ExternalLink, Settings, ShieldAlert, Link2 } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 
 export function Dashboard() {
@@ -100,15 +101,18 @@ export function Dashboard() {
   };
 
   const handleWithdraw = async (ruleId: string) => {
+    if (!account) return;
     const toastId = toast.loading("Withdrawing tolls...");
 
     try {
       const tx = new Transaction();
       
-      tx.moveCall({
+      const coin = tx.moveCall({
         target: `${PACKAGE_ID}::stargazer::withdraw_tolls`,
         arguments: [tx.object(ruleId)],
       });
+
+      tx.transferObjects([coin], tx.pure.address(account.address));
 
       await signAndExecuteTransaction({ transaction: tx });
       toast.success("Tolls withdrawn successfully!", { id: toastId });
@@ -297,9 +301,24 @@ export function Dashboard() {
                   <td className="py-4 px-6">
                     <div className="flex gap-2 justify-end opacity-50 group-hover:opacity-100 transition-opacity">
                       <button 
-                        onClick={() => window.open(`/gate/${rule.id}`, "_blank")}
+                        onClick={() => {
+                          const shortCode = encodeRuleId(rule.id);
+                          const url = `${window.location.origin}/gate/${shortCode}`;
+                          navigator.clipboard.writeText(url);
+                          toast.success("Short Payment Link Copied to Clipboard!");
+                        }}
                         className="p-2 border border-eve-white/20 text-eve-white hover:bg-eve-white/10 hover:border-eve-white transition-all"
-                        title="Open DApp"
+                        title="Copy Payment Link"
+                      >
+                        <Link2 className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => {
+                          const shortCode = encodeRuleId(rule.id);
+                          window.open(`/gate/${shortCode}`, "_blank");
+                        }}
+                        className="p-2 border border-eve-white/20 text-eve-white hover:bg-eve-white/10 hover:border-eve-white transition-all"
+                        title="Open Payment Page"
                       >
                         <ExternalLink className="w-4 h-4" />
                       </button>

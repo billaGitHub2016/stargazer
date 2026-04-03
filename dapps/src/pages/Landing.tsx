@@ -55,25 +55,25 @@ export function Landing() {
       >
         {account ? (
           <button 
-            className="group relative px-8 py-4 bg-eve-white text-eve-black font-mono text-sm tracking-widest font-bold uppercase transition-all duration-300 hover:shadow-[0_0_30px_rgba(250,250,229,0.3)] overflow-hidden"
+            className="group relative px-8 py-4 bg-eve-white text-eve-black font-mono text-sm tracking-widest font-bold uppercase transition-all duration-300 hover:shadow-[0_0_30px_rgba(189,255,0,0.3)] overflow-hidden"
             onClick={() => navigate("/dashboard")}
           >
-            <span className="relative z-10 flex items-center gap-2">
+            <span className="relative z-10 flex items-center gap-2 text-eve-black group-hover:text-eve-black transition-colors duration-300">
               ENTER DASHBOARD
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </span>
-            <div className="absolute inset-0 bg-white translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out z-0" />
+            <div className="absolute inset-0 bg-eve-green translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out z-0" />
           </button>
         ) : (
           <button 
-            className="group relative px-8 py-4 bg-eve-white text-eve-black font-mono text-sm tracking-widest font-bold uppercase transition-all duration-300 hover:shadow-[0_0_30px_rgba(250,250,229,0.3)] overflow-hidden"
+            className="group relative px-8 py-4 bg-eve-white text-eve-black font-mono text-sm tracking-widest font-bold uppercase transition-all duration-300 hover:shadow-[0_0_30px_rgba(189,255,0,0.3)] overflow-hidden"
             onClick={() => handleConnect()}
           >
-            <span className="relative z-10 flex items-center gap-2">
+            <span className="relative z-10 flex items-center gap-2 text-eve-black group-hover:text-eve-black transition-colors duration-300">
               BECOME A FOUNDER
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </span>
-            <div className="absolute inset-0 bg-white translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out z-0" />
+            <div className="absolute inset-0 bg-eve-green translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out z-0" />
           </button>
         )}
       </motion.div>

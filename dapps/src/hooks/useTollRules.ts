@@ -9,7 +9,8 @@ export interface TollRule {
   owner: string;
 }
 
-const RPC_URL = "https://fullnode.testnet.sui.io:443";
+// Using alternative RPC endpoint to bypass potential CORS preflight issues on Mysten's public nodes
+const RPC_URL = "https://sui-testnet-endpoint.blockvision.org";
 
 export function useTollRules() {
   const account = useCurrentAccount();
@@ -45,8 +46,8 @@ export function useTollRules() {
 
         const events = eventsData.result;
         for (const event of events.data) {
-          if (event.parsedJson.owner === account.address) {
-            ruleIds.push(event.parsedJson.rule_id);
+          if (event.parsedJson && (event.parsedJson as any).owner === account.address) {
+            ruleIds.push((event.parsedJson as any).rule_id);
           }
         }
 
@@ -93,11 +94,59 @@ export function useTollRules() {
   });
 }
 
-export function useTollRule(ruleId?: string) {
+export function useTollRule(ruleIdOrShortCode?: string) {
   return useQuery({
-    queryKey: ["toll-rule", ruleId],
+    queryKey: ["toll-rule", ruleIdOrShortCode],
     queryFn: async () => {
-      if (!ruleId) return null;
+      if (!ruleIdOrShortCode) return null;
+
+      let actualRuleId = ruleIdOrShortCode;
+
+      // If it's a 6-character short code, we need to find the full rule ID
+      if (ruleIdOrShortCode.length === 6 && !ruleIdOrShortCode.startsWith("0x")) {
+        let hasNextPage = true;
+        let cursor: any = null;
+
+        while (hasNextPage) {
+          const res = await fetch(RPC_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              jsonrpc: "2.0",
+              id: 1,
+              method: "suix_queryEvents",
+              params: [
+                { MoveEventType: `${PACKAGE_ID}::stargazer::RuleCreated` },
+                cursor,
+                50,
+                false
+              ]
+            })
+          });
+          const eventsData = await res.json();
+          if (!eventsData.result) break;
+
+          const events = eventsData.result;
+          for (const event of events.data) {
+            const parsedJson = event.parsedJson as any;
+            if (parsedJson && parsedJson.rule_id) {
+              const ruleIdHex = parsedJson.rule_id.startsWith('0x') 
+                ? parsedJson.rule_id.slice(2) 
+                : parsedJson.rule_id;
+              
+              if (ruleIdHex.startsWith(ruleIdOrShortCode)) {
+                actualRuleId = parsedJson.rule_id;
+                hasNextPage = false;
+                break;
+              }
+            }
+          }
+          if (hasNextPage) {
+            hasNextPage = events.hasNextPage;
+            cursor = events.nextCursor;
+          }
+        }
+      }
 
       const objRes = await fetch(RPC_URL, {
         method: "POST",
@@ -107,7 +156,7 @@ export function useTollRule(ruleId?: string) {
           id: 3,
           method: "sui_getObject",
           params: [
-            ruleId,
+            actualRuleId,
             { showContent: true }
           ]
         })
@@ -116,7 +165,7 @@ export function useTollRule(ruleId?: string) {
       const obj = objData.result;
 
       if (obj?.data?.content?.dataType === "moveObject") {
-        const fields = obj.data.content.fields;
+        const fields = obj.data.content.fields as any;
         return {
           id: obj.data.objectId,
           feeAmount: fields.fee_amount,
@@ -127,7 +176,7 @@ export function useTollRule(ruleId?: string) {
 
       return null;
     },
-    enabled: !!ruleId,
-    refetchInterval: 10000,
+    enabled: !!ruleIdOrShortCode,
+    refetchInterval: 100000,
   });
 }
