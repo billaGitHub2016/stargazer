@@ -2,7 +2,7 @@ import { useCurrentAccount, useDAppKit } from "@mysten/dapp-kit-react";
 import { SuiJsonRpcClient } from "@mysten/sui/jsonRpc";
 import { getOwnedObjectsByType, useConnection } from "@evefrontier/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useTollRules } from "../hooks/useTollRules";
 import { encodeRuleId } from "../utils/shortLink";
 import { PACKAGE_ID, WORLD_PACKAGE_ID } from "../config/constants";
@@ -18,14 +18,56 @@ import {
   Settings,
   ShieldAlert,
   Link2,
+  Inbox,
+  RefreshCw,
 } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 
 export function Dashboard() {
   const account = useCurrentAccount();
-  const { data: rules = [], isLoading, refetch } = useTollRules();
+  const {
+    data: rules = [],
+    isLoading,
+    isError,
+    isFetching,
+    refetch,
+  } = useTollRules();
   const { signAndExecuteTransaction } = useDAppKit();
   const { isConnected } = useConnection();
+
+  const ActionIconButton = ({
+    label,
+    onClick,
+    disabled,
+    className,
+    children,
+  }: {
+    label: string;
+    onClick?: () => void;
+    disabled?: boolean;
+    className: string;
+    children: ReactNode;
+  }) => {
+    return (
+      <span className="relative inline-flex">
+        <button
+          type="button"
+          onClick={onClick}
+          disabled={disabled}
+          className={`${className} peer`}
+          aria-label={label}
+        >
+          {children}
+        </button>
+        <span
+          role="tooltip"
+          className="pointer-events-none absolute left-1/2 top-0 z-[60] -translate-x-1/2 -translate-y-[110%] whitespace-nowrap border border-eve-white/20 bg-[#0B0B0B] px-2 py-1 text-[10px] font-mono tracking-widest text-eve-white/80 opacity-0 transition-opacity peer-hover:opacity-100 peer-focus-visible:opacity-100"
+        >
+          {label}
+        </span>
+      </span>
+    );
+  };
 
   const [newFee, setNewFee] = useState("");
   const [isCreating, setIsCreating] = useState(false);
@@ -519,21 +561,59 @@ export function Dashboard() {
             SCANNING NETWORK...
           </span>
         </motion.div>
+      ) : isError ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex flex-col items-center justify-center py-20 border border-eve-white/10 bg-eve-white/5 backdrop-blur-sm"
+        >
+          <ShieldAlert className="w-14 h-14 text-eve-orange/80 mb-4" />
+          <span className="text-eve-white/80 font-mono tracking-[0.2em] text-sm mb-2">
+            QUERY FAILED
+          </span>
+          <span className="text-eve-white/50 font-sans text-sm mb-6">
+            Query failed. Click refresh to retry.
+          </span>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className={`inline-flex items-center gap-2 px-6 py-3 font-mono text-xs tracking-widest uppercase border transition-all ${
+              isFetching
+                ? "border-eve-white/10 text-eve-white/30 cursor-not-allowed"
+                : "border-eve-white/20 text-eve-white/80 hover:bg-eve-white/5 hover:border-eve-white"
+            }`}
+          >
+            <RefreshCw className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`} />
+            {isFetching ? "REFRESHING..." : "REFRESH"}
+          </button>
+        </motion.div>
       ) : rules.length === 0 ? (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="flex flex-col items-center justify-center py-20 border border-eve-white/10 bg-eve-white/5 backdrop-blur-sm"
         >
-          <div className="w-16 h-16 border border-eve-white/20 rounded-full flex items-center justify-center mb-4">
-            <span className="text-eve-white/50 font-mono">00</span>
-          </div>
-          <span className="text-eve-white/50 font-mono tracking-[0.2em] text-sm">
+          <Inbox className="w-14 h-14 text-eve-white/40 mb-4" />
+          <span className="text-eve-white/50 font-mono tracking-[0.2em] text-sm mb-6">
             NO PROTOCOLS ESTABLISHED YET
           </span>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className={`inline-flex items-center gap-2 px-6 py-3 font-mono text-xs tracking-widest uppercase border transition-all ${
+              isFetching
+                ? "border-eve-white/10 text-eve-white/30 cursor-not-allowed"
+                : "border-eve-white/20 text-eve-white/80 hover:bg-eve-white/5 hover:border-eve-white"
+            }`}
+          >
+            <RefreshCw className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`} />
+            {isFetching ? "REFRESHING..." : "REFRESH"}
+          </button>
         </motion.div>
       ) : (
-        <div className="w-full overflow-x-auto">
+        <div className="w-full overflow-x-auto overflow-y-visible">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-eve-white/20 bg-eve-white/5">
@@ -579,7 +659,8 @@ export function Dashboard() {
                   </td>
                   <td className="py-4 px-6">
                     <div className="flex gap-2 justify-end opacity-50 group-hover:opacity-100 transition-opacity">
-                      <button
+                      <ActionIconButton
+                        label="Copy payment link"
                         onClick={() => {
                           const shortCode = encodeRuleId(rule.id);
                           const url = `${window.location.origin}/gate/${shortCode}`;
@@ -589,31 +670,30 @@ export function Dashboard() {
                           );
                         }}
                         className="p-2 border border-eve-white/20 text-eve-white hover:bg-eve-white/10 hover:border-eve-white transition-all"
-                        title="Copy Payment Link"
                       >
                         <Link2 className="w-4 h-4" />
-                      </button>
-                      <button
+                      </ActionIconButton>
+                      <ActionIconButton
+                        label="Open payment page"
                         onClick={() => {
                           const shortCode = encodeRuleId(rule.id);
                           window.open(`/gate/${shortCode}`, "_blank");
                         }}
                         className="p-2 border border-eve-white/20 text-eve-white hover:bg-eve-white/10 hover:border-eve-white transition-all"
-                        title="Open Payment Page"
                       >
                         <ExternalLink className="w-4 h-4" />
-                      </button>
-                      <button
+                      </ActionIconButton>
+                      <ActionIconButton
+                        label="Edit rule"
                         onClick={() => openEditModal(rule)}
                         className="p-2 border border-eve-white/20 text-eve-white hover:bg-eve-white/10 hover:border-eve-white transition-all"
-                        title="Edit Rule"
                       >
                         <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
+                      </ActionIconButton>
+                      <ActionIconButton
+                        label="Delete rule"
                         onClick={() => handleDeleteRule(rule.id)}
                         className="p-2 border border-eve-white/20 text-eve-white hover:bg-red-500/20 hover:text-red-500 hover:border-red-500 transition-all"
-                        title="Delete Rule"
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -632,8 +712,9 @@ export function Dashboard() {
                           <line x1="10" y1="11" x2="10" y2="17"></line>
                           <line x1="14" y1="11" x2="14" y2="17"></line>
                         </svg>
-                      </button>
-                      <button
+                      </ActionIconButton>
+                      <ActionIconButton
+                        label="Withdraw vault"
                         onClick={() => handleWithdraw(rule.id)}
                         disabled={rule.vaultBalance === "0"}
                         className={`p-2 border transition-all ${
@@ -641,10 +722,9 @@ export function Dashboard() {
                             ? "border-eve-white/10 text-eve-white/30 cursor-not-allowed"
                             : "border-eve-green/50 text-eve-green hover:bg-eve-green hover:text-eve-black"
                         }`}
-                        title="Withdraw Vault"
                       >
                         <Wallet className="w-4 h-4" />
-                      </button>
+                      </ActionIconButton>
                     </div>
                   </td>
                 </motion.tr>
