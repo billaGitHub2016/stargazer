@@ -1,18 +1,25 @@
 module smart_gate_extension::stargazer;
 
-use smart_gate_extension::config::{Self, XAuth};
 use sui::balance::{Self, Balance};
 use sui::clock::Clock;
 use sui::coin::{Self, Coin};
 use sui::sui::SUI;
+use std::string::String;
 use sui::event;
 use world::{character::Character, gate::{Self, Gate}};
+
+// === Auth ===
+public struct StargazerAuth has drop {}
 
 // === Errors ===
 #[error(code = 0)]
 const ENotOwner: vector<u8> = b"Not the rule owner";
 #[error(code = 1)]
 const EInsufficientFee: vector<u8> = b"Insufficient fee paid";
+#[error(code = 2)]
+const EInvalidSourceGate: vector<u8> = b"Invalid source gate provided";
+#[error(code = 3)]
+const EInvalidDestinationGate: vector<u8> = b"Invalid destination gate provided";
 
 // === Structs ===
 /// The toll rule created by a player. Shared object.
@@ -20,6 +27,9 @@ public struct TollRule has key {
     id: UID,
     owner: address,
     fee_amount: u64,
+    description: String,
+    source_gate_id: ID,
+    destination_gate_id: ID,
     vault: Balance<SUI>,
 }
 
@@ -33,7 +43,13 @@ public struct RuleCreated has copy, drop {
 // === Public Functions ===
 
 /// Factory function to create a new TollRule
-public fun create_rule(fee_amount: u64, ctx: &mut TxContext) {
+public fun create_rule(
+    fee_amount: u64, 
+    description: String,
+    source_gate_id: ID,
+    destination_gate_id: ID,
+    ctx: &mut TxContext
+) {
     let owner = ctx.sender();
     let id = object::new(ctx);
     let rule_id = id.to_inner();
@@ -42,6 +58,9 @@ public fun create_rule(fee_amount: u64, ctx: &mut TxContext) {
         id,
         owner,
         fee_amount,
+        description,
+        source_gate_id,
+        destination_gate_id,
         vault: balance::zero(),
     };
 
@@ -58,6 +77,29 @@ public fun create_rule(fee_amount: u64, ctx: &mut TxContext) {
 public fun update_rule(rule: &mut TollRule, new_fee: u64, ctx: &mut TxContext) {
     assert!(ctx.sender() == rule.owner, ENotOwner);
     rule.fee_amount = new_fee;
+}
+
+/// Owner can update the description
+public fun update_description(rule: &mut TollRule, new_description: String, ctx: &mut TxContext) {
+    assert!(ctx.sender() == rule.owner, ENotOwner);
+    rule.description = new_description;
+}
+
+/// Owner can delete the rule and reclaim any remaining SUI in the vault
+public fun delete_rule(rule: TollRule, ctx: &mut TxContext) {
+    assert!(ctx.sender() == rule.owner, ENotOwner);
+    let TollRule { id, owner: _, fee_amount: _, description: _, source_gate_id: _, destination_gate_id: _, vault } = rule;
+    
+    // Return any remaining funds in the vault to the owner
+    let remaining_balance = vault.value();
+    if (remaining_balance > 0) {
+        let remaining_coin = coin::from_balance(vault, ctx);
+        transfer::public_transfer(remaining_coin, ctx.sender());
+    } else {
+        vault.destroy_zero();
+    };
+    
+    object::delete(id);
 }
 
 /// Owner can withdraw from the vault
@@ -79,6 +121,10 @@ public fun pay_toll_and_jump(
     clock: &Clock,
     ctx: &mut TxContext,
 ) {
+    // Validate that the passed gates match the rule configuration
+    assert!(object::id(source_gate) == rule.source_gate_id, EInvalidSourceGate);
+    assert!(object::id(destination_gate) == rule.destination_gate_id, EInvalidDestinationGate);
+
     assert!(payment.value() >= rule.fee_amount, EInsufficientFee);
 
     let payment_balance = coin::balance_mut(&mut payment);
@@ -98,11 +144,11 @@ public fun pay_toll_and_jump(
     let ts = clock.timestamp_ms();
     let expires_at_timestamp_ms = ts + expiry_ms;
     
-    gate::issue_jump_permit<XAuth>(
+    gate::issue_jump_permit<StargazerAuth>(
         source_gate,
         destination_gate,
         character,
-        config::x_auth(),
+        StargazerAuth {},
         expires_at_timestamp_ms,
         ctx,
     );
