@@ -4,22 +4,29 @@ import { Landing } from "./pages/Landing";
 import { Dashboard } from "./pages/Dashboard";
 import { GatePayment } from "./pages/GatePayment";
 import { Toaster } from "react-hot-toast";
+import { createPortal } from "react-dom";
 
 function App() {
   return (
     <>
-      <Toaster 
-        position="top-right" 
-        toastOptions={{
-          style: {
-            background: '#111',
-            color: '#fff',
-            border: '1px solid #333',
-            borderRadius: '0',
-            fontFamily: 'Inter, sans-serif'
-          }
-        }} 
-      />
+      {typeof document !== "undefined"
+        ? createPortal(
+            <Toaster
+              position="top-right"
+              containerStyle={{ zIndex: 2147483647 }}
+              toastOptions={{
+                style: {
+                  background: "#111",
+                  color: "#fff",
+                  border: "1px solid #333",
+                  borderRadius: "0",
+                  fontFamily: "Inter, sans-serif",
+                },
+              }}
+            />,
+            document.body,
+          )
+        : null}
       <Router>
         <Routes>
           <Route path="/" element={<Layout />}>

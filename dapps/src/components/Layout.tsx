@@ -15,7 +15,7 @@ export function Layout() {
       {/* Dynamic Background Noise/Grid */}
       <div className="absolute inset-0 pointer-events-none opacity-20 z-0" style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(250, 250, 229, 0.1) 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
       
-      <header className="sticky top-0 z-50 w-full border-b border-eve-white/10 bg-eve-black/80 backdrop-blur-md">
+      <header className="fixed top-0 z-50 w-full border-b border-eve-white/10 bg-eve-black/80 backdrop-blur-md">
         <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
           <motion.div 
             className="flex items-center gap-3 cursor-pointer group"
@@ -56,7 +56,7 @@ export function Layout() {
         </div>
       </header>
       
-      <main className="flex-1 relative z-10 w-full max-w-[1400px] mx-auto pt-12 pb-24">
+      <main className="flex-1 relative z-10 w-full max-w-[1400px] mx-auto pt-[100px] pb-24 h-full overflow-auto">
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
