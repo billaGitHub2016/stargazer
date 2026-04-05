@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useCurrentAccount, useDAppKit } from "@mysten/dapp-kit-react";
-import { useConnection } from "@evefrontier/dapp-kit";
+import { useConnection, useSmartObject } from "@evefrontier/dapp-kit";
 import { useState, useMemo } from "react";
 import { useTollRule } from "../hooks/useTollRules";
 import { PACKAGE_ID } from "../config/constants";
@@ -23,6 +23,8 @@ export function GatePayment() {
   const { handleConnect } = useConnection();
 
   const { data: rule, isLoading, isFetching, refetch } = useTollRule(rawRuleId);
+  const { assembly: currentGateAssembly, loading: isGateLoading } =
+    useSmartObject();
   const { signAndExecuteTransaction } = useDAppKit();
 
   const [isPaying, setIsPaying] = useState(false);
@@ -50,8 +52,23 @@ export function GatePayment() {
     return `https://suiscan.xyz/testnet/object/${rule.destinationGateId}`;
   }, [rule]);
 
+  const currentGateId = currentGateAssembly?.id;
+
+  const directionText = useMemo(() => {
+    if (!rule || !currentGateId) return null;
+    if (currentGateId === rule.sourceGateId) return "Gate1 → Gate2";
+    if (currentGateId === rule.destinationGateId) return "Gate2 → Gate1";
+    return null;
+  }, [currentGateId, rule]);
+
+  const isGateMismatch = !!rule && !!currentGateId && !directionText;
+
   const handlePayToll = async () => {
     if (!rule || !account) return;
+    if (isGateMismatch) {
+      toast.error(`The current star gate does not belong to the rule ${rawRuleId} and cannot sell tickets.`);
+      return;
+    }
     if (!characterIdInput.trim()) {
       toast.error("Please enter your Character ID");
       return;
@@ -191,6 +208,21 @@ export function GatePayment() {
             <div className="flex flex-row align-center">
               <div className="flex items-center justify-between mt-0">
                 <span className="block text-eve-white/60 mb-0 text-xs font-mono uppercase tracking-widest mr-2">
+                  Ticket Direction:
+                </span>
+              </div>
+              <div className="flex items-start justify-start mt-0">
+                <span className="text-eve-white break-all font-mono text-xs mb-0">
+                  {isGateLoading && !currentGateId
+                    ? "Detecting current gate..."
+                    : directionText ?? "Unknown"}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-row align-center">
+              <div className="flex items-center justify-between mt-0">
+                <span className="block text-eve-white/60 mb-0 text-xs font-mono uppercase tracking-widest mr-2">
                   Description:
                 </span>
               </div>
@@ -296,6 +328,14 @@ export function GatePayment() {
             />
           </div>
 
+          {isGateMismatch && (
+            <div className="w-full p-4 border border-red-500/30 bg-red-500/10 text-left">
+              <span className="text-red-400 text-xs font-mono tracking-widest">
+                The current star gate does not belong to the rule {rawRuleId}. Cannot sell tickets.
+              </span>
+            </div>
+          )}
+
           {paid ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
@@ -323,9 +363,9 @@ export function GatePayment() {
                 </button>
               ) : (
                 <button
-                  disabled={isPaying}
+                  disabled={isPaying || isGateMismatch}
                   className={`w-full h-14 font-mono text-xs tracking-widest font-bold uppercase transition-all duration-300 flex items-center justify-center gap-2 ${
-                    isPaying
+                    isPaying || isGateMismatch
                       ? "bg-eve-white/10 text-eve-white/50 cursor-not-allowed"
                       : "bg-eve-green text-eve-black hover:shadow-[0_0_20px_rgba(189,255,0,0.3)]"
                   }`}
