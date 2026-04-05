@@ -4,9 +4,12 @@ import { PACKAGE_ID } from "../config/constants";
 
 export interface TollRule {
   id: string;
-  feeAmount: string;
-  vaultBalance: string;
   owner: string;
+  feeAmount: string;
+  description: string;
+  sourceGateId: string;
+  destinationGateId: string;
+  vaultBalance: string;
 }
 
 // Using alternative RPC endpoint to bypass potential CORS preflight issues on Mysten's public nodes
@@ -79,10 +82,13 @@ export function useTollRules() {
           if (obj.data?.content?.dataType === "moveObject") {
             const fields = obj.data.content.fields;
             return {
-              id: obj.data.objectId,
-              feeAmount: fields.fee_amount,
-              vaultBalance: fields.vault,
+              id: fields.id.id,
               owner: fields.owner,
+              feeAmount: fields.fee_amount,
+              description: fields.description,
+              sourceGateId: fields.source_gate_id,
+              destinationGateId: fields.destination_gate_id,
+              vaultBalance: fields.vault,
             } as TollRule;
           }
           return null;
@@ -167,11 +173,14 @@ export function useTollRule(ruleIdOrShortCode?: string) {
       if (obj?.data?.content?.dataType === "moveObject") {
         const fields = obj.data.content.fields as any;
         return {
-          id: obj.data.objectId,
-          feeAmount: fields.fee_amount,
-          vaultBalance: fields.vault,
-          owner: fields.owner,
-        } as TollRule;
+        id: fields.id.id,
+        owner: fields.owner,
+        feeAmount: fields.fee_amount,
+        description: fields.description,
+        sourceGateId: fields.source_gate_id,
+        destinationGateId: fields.destination_gate_id,
+        vaultBalance: fields.vault,
+      } as TollRule;
       }
 
       return null;

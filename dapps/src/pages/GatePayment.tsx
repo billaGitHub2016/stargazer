@@ -21,28 +21,33 @@ export function GatePayment() {
 
   const [isPaying, setIsPaying] = useState(false);
   const [paid, setPaid] = useState(false);
+  const [characterIdInput, setCharacterIdInput] = useState("");
 
   const handlePayToll = async () => {
     if (!rule || !account) return;
+    if (!characterIdInput.trim()) {
+      toast.error("Please enter your Character ID");
+      return;
+    }
+
     setIsPaying(true);
     const toastId = toast.loading("Processing payment...");
     
     try {
       const tx = new Transaction();
       
-      // Let the user pay the fee directly from their gas coin
-      // The amount is automatically checked by the contract
       const feeAmountMist = tx.pure.u64(rule.feeAmount);
-      
-      // Instead of splitting a separate coin, we just pass a split of the gas coin
-      // Sui Wallet and others handle this pattern natively
       const [paymentCoin] = tx.splitCoins(tx.gas, [feeAmountMist]);
         
         tx.moveCall({
-          target: `${PACKAGE_ID}::stargazer::pay_toll_only`,
+          target: `${PACKAGE_ID}::stargazer::pay_toll_and_jump`,
           arguments: [
             tx.object(rule.id),
             paymentCoin,
+            tx.object(rule.sourceGateId),
+            tx.object(rule.destinationGateId),
+            tx.object(characterIdInput.trim()),
+            tx.object("0x6"), // The Sui System Clock object ID is 0x6
           ],
         });
 
@@ -109,6 +114,19 @@ export function GatePayment() {
             <span className="font-bold text-4xl text-eve-green font-mono drop-shadow-[0_0_10px_rgba(189,255,0,0.3)]">
               {feeInSui} SUI
             </span>
+          </div>
+
+          <div className="w-full flex flex-col gap-3">
+            <label className="text-xs font-mono tracking-widest text-eve-white/80 uppercase text-left">
+              Traveler Character ID <span className="text-eve-orange">*</span>
+            </label>
+            <input 
+              type="text"
+              value={characterIdInput}
+              onChange={(e) => setCharacterIdInput(e.target.value)}
+              placeholder="0x..." 
+              className="w-full bg-black/50 border border-eve-white/20 text-eve-white font-mono text-sm p-4 focus:outline-none focus:border-eve-green transition-colors"
+            />
           </div>
 
           {paid ? (
