@@ -1,13 +1,27 @@
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useCurrentAccount } from "@mysten/dapp-kit-react";
 import { useConnection } from "@evefrontier/dapp-kit";
-import { motion } from "framer-motion";
-import { ArrowRight, Globe } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowRight, Globe, X } from "lucide-react";
 
 export function Landing() {
   const navigate = useNavigate();
   const account = useCurrentAccount();
   const { handleConnect } = useConnection();
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (selectedImage) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [selectedImage]);
 
   return (
     <div className="flex flex-col items-center min-h-[75vh] text-center relative w-full">
@@ -103,9 +117,12 @@ export function Landing() {
                 </p>
               </div>
               <div className="w-full md:w-[360px] aspect-[16/9] border border-eve-white/15 bg-black/30 flex items-center justify-center">
-                <span className="text-eve-white/30 font-mono text-xs tracking-widest">
-                  IMAGE PLACEHOLDER
-                </span>
+                <img 
+                  src="./dapp1.png" 
+                  alt="sell ticket" 
+                  className="cursor-pointer hover:opacity-80 transition-opacity w-full h-full object-cover"
+                  onClick={() => setSelectedImage("./dapp1.png")}
+                />
               </div>
             </div>
           </div>
@@ -126,10 +143,13 @@ export function Landing() {
                   </div>
                 </div>
               </div>
-              <div className="mt-6 w-full aspect-[16/9] border border-eve-white/10 bg-black/30 flex items-center justify-center">
-                <span className="text-eve-white/20 font-mono text-[10px] tracking-widest">
-                  SCREENSHOT PLACEHOLDER
-                </span>
+              <div className="mt-6 w-full aspect-[16/9] border border-eve-white/10 bg-black/30 flex items-center justify-center overflow-hidden">
+                <img 
+                  src="./create_rule.png" 
+                  alt="create rule" 
+                  className="cursor-pointer hover:scale-105 transition-transform duration-300 w-full h-full object-cover"
+                  onClick={() => setSelectedImage("./create_rule.png")}
+                />
               </div>
             </div>
 
@@ -140,18 +160,20 @@ export function Landing() {
                 </div>
                 <div className="flex-1">
                   <div className="text-eve-white font-mono text-sm tracking-widest uppercase mb-2">
-                    Share the Link
+                    Edit assembly custom dapp
                   </div>
                   <div className="text-eve-white/70 font-sans text-sm leading-relaxed">
-                    Copy the short payment link and send it to travelers. They can
-                    open it directly to pay for the next transit.
+                    Open the assembly editing interface, enter the dapp link in the DAPP LINK field, and save.
                   </div>
                 </div>
               </div>
-              <div className="mt-6 w-full aspect-[16/9] border border-eve-white/10 bg-black/30 flex items-center justify-center">
-                <span className="text-eve-white/20 font-mono text-[10px] tracking-widest">
-                  SCREENSHOT PLACEHOLDER
-                </span>
+              <div className="mt-6 w-full aspect-[16/9] border border-eve-white/10 bg-black/30 flex items-center justify-center overflow-hidden">
+                <img 
+                  src="./custom-app.png" 
+                  alt="dapp link edit" 
+                  className="cursor-pointer hover:scale-105 transition-transform duration-300 w-full h-full object-cover"
+                  onClick={() => setSelectedImage("./custom-app.png")}
+                />
               </div>
             </div>
 
@@ -162,19 +184,20 @@ export function Landing() {
                 </div>
                 <div className="flex-1">
                   <div className="text-eve-white font-mono text-sm tracking-widest uppercase mb-2">
-                    Sell at the Right Gate
+                    Finish
                   </div>
                   <div className="text-eve-white/70 font-sans text-sm leading-relaxed">
-                    Open the payment page while standing at Gate 1 or Gate 2. The
-                    page detects your current gate context and locks payment if the
-                    rule does not match.
+                    In the game, approach the start gate assembly and interact with it to access the ticketing dapp interface.
                   </div>
                 </div>
               </div>
-              <div className="mt-6 w-full aspect-[16/9] border border-eve-white/10 bg-black/30 flex items-center justify-center">
-                <span className="text-eve-white/20 font-mono text-[10px] tracking-widest">
-                  SCREENSHOT PLACEHOLDER
-                </span>
+              <div className="mt-6 w-full aspect-[16/9] border border-eve-white/10 bg-black/30 flex items-center justify-center overflow-hidden">
+                <img 
+                  src="./dapp1.png" 
+                  alt="sell ticket" 
+                  className="cursor-pointer hover:scale-105 transition-transform duration-300 w-full h-full object-cover"
+                  onClick={() => setSelectedImage("./dapp1.png")}
+                />
               </div>
             </div>
           </div>
@@ -241,6 +264,38 @@ export function Landing() {
         SYS.REQ // 0x8CFB...C7A2<br />
         STATUS  // ONLINE
       </div>
+
+      {typeof document !== "undefined" && createPortal(
+        <AnimatePresence>
+          {selectedImage && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedImage(null)}
+              className="fixed inset-0 z-[2147483647] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 cursor-zoom-out"
+            >
+              <button
+                onClick={() => setSelectedImage(null)}
+                className="absolute top-6 right-6 text-eve-white/70 hover:text-eve-white transition-colors"
+              >
+                <X className="w-8 h-8" />
+              </button>
+              <motion.img
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                src={selectedImage}
+                alt="Enlarged view"
+                className="max-w-full max-h-[90vh] object-contain border border-eve-white/20 shadow-[0_0_50px_rgba(189,255,0,0.1)] cursor-default"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }
