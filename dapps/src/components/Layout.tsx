@@ -11,7 +11,7 @@ export function Layout() {
   const location = useLocation();
 
   return (
-    <div className="min-h-[100dvh] bg-eve-black text-eve-white flex flex-col relative overflow-hidden">
+    <div className="min-h-[100dvh] bg-eve-black text-eve-white flex flex-col relative">
       {/* Dynamic Background Noise/Grid */}
       <div className="absolute inset-0 pointer-events-none opacity-20 z-0" style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(250, 250, 229, 0.1) 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
       
@@ -56,7 +56,7 @@ export function Layout() {
         </div>
       </header>
       
-      <main className="flex-1 relative z-10 w-full max-w-[1400px] mx-auto pt-[100px] pb-24 h-full overflow-auto">
+      <main className="flex-1 relative z-10 w-full max-w-[1400px] mx-auto pt-[100px] pb-24 h-full">
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
