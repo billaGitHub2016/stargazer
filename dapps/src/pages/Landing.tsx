@@ -36,7 +36,7 @@ export function Landing() {
           className="mb-6 inline-flex items-center gap-2 px-4 py-3 border border-eve-green/30 bg-eve-green/10 rounded-full text-eve-green text-xs font-mono tracking-widest"
         >
           <Globe className="w-3 h-3" />
-          <span className="mb-0">EVE FRONTIER NETWORK ACTIVE</span>
+          <span className="mb-0">EVE FRONTIER UTOPIA SERVER ACTIVE</span>
         </motion.div>
 
         <motion.h1
@@ -215,45 +215,40 @@ export function Landing() {
               UNDER THE HOOD
             </div>
             <h2 className="text-eve-white font-mono text-2xl md:text-3xl tracking-[0.08em] uppercase mb-3">
-              Simple Architecture
+              Smart Contract Architecture
             </h2>
             <p className="text-eve-white/70 font-sans text-sm md:text-base leading-relaxed max-w-3xl">
-              Stargazer works by pairing a published toll rule with in-game context.
-              When a player opens a payment link from the EVE Frontier client, the
-              app reads the current Stargate from the client context, verifies it
-              matches the rule’s Gate 1 / Gate 2, and only then allows payment.
+              Stargazer operates entirely on-chain through Sui smart contracts, ensuring absolute security and trustless execution. 
+              The system decouples rule definition from game client execution, making it a robust and uncheatable tolling mechanism.
             </p>
           </div>
           <div className="px-8 py-8 text-left">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="border border-eve-white/10 bg-black/30 p-6">
                 <div className="text-eve-white font-mono text-xs tracking-widest uppercase mb-3">
-                  Rule Data
+                  On-Chain Rule Objects
                 </div>
                 <div className="text-eve-white/70 font-sans text-sm leading-relaxed">
-                  Rules define Gate 1, Gate 2, description, fee, and a vault that
-                  accumulates the collected tolls. The dashboard reads rules and
-                  lets you create, edit, withdraw, or delete them.
+                  Every toll rule is minted as a unique Sui Object containing the immutable configuration of Gate 1, Gate 2, the required fee, and a secure vault (Balance). 
+                  Because the rules exist on-chain, they cannot be tampered with by third parties.
                 </div>
               </div>
               <div className="border border-eve-white/10 bg-black/30 p-6">
                 <div className="text-eve-white font-mono text-xs tracking-widest uppercase mb-3">
-                  Client Context Verification
+                  Atomic Execution & Security
                 </div>
                 <div className="text-eve-white/70 font-sans text-sm leading-relaxed">
-                  The payment page uses the EVE Frontier dapp context to resolve
-                  the player’s current Stargate. It determines direction (Gate 1 →
-                  Gate 2 or Gate 2 → Gate 1) and blocks payment if the context does
-                  not match the rule.
+                  The payment and gate activation happen in a single, atomic Move transaction (`pay_toll_and_jump`). 
+                  The contract strictly verifies that the player's current gate matches the rule's definition before depositing the SUI fee into the rule's vault and granting passage. If the conditions aren't met, the transaction reverts, ensuring no funds are lost.
                 </div>
               </div>
             </div>
 
-            <div className="mt-8 w-full aspect-[21/9] border border-eve-white/10 bg-black/30 flex items-center justify-center">
+            {/* <div className="mt-8 w-full aspect-[21/9] border border-eve-white/10 bg-black/30 flex items-center justify-center">
               <span className="text-eve-white/20 font-mono text-[10px] tracking-widest">
-                DIAGRAM PLACEHOLDER
+                TRUSTLESS ON-CHAIN VERIFICATION DIAGRAM
               </span>
-            </div>
+            </div> */}
           </div>
         </motion.div>
       </div>
