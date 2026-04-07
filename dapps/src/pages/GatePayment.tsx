@@ -1,13 +1,15 @@
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { useCurrentAccount, useDAppKit } from "@mysten/dapp-kit-react";
 import { useConnection, useSmartObject } from "@evefrontier/dapp-kit";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useTollRule } from "../hooks/useTollRules";
 import { PACKAGE_ID } from "../config/constants";
 import { Transaction } from "@mysten/sui/transactions";
 import { MIST_PER_SUI } from "@mysten/sui/utils";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
+import { getWalletCharacters } from "@evefrontier/dapp-kit/graphql";
+import { parseCharacterFromJson } from "@evefrontier/dapp-kit/utils";
 import {
   ShieldCheck,
   Zap,
@@ -18,18 +20,57 @@ import {
 } from "lucide-react";
 
 export function GatePayment() {
-  const { ruleId: rawRuleId } = useParams();
+  const { ruleId: pathRuleId } = useParams();
+  const [searchParams] = useSearchParams();
+  const rawRuleId = pathRuleId || searchParams.get("ruleId") || undefined;
+  const assemblyId = searchParams.get("aId") || undefined;
+
   const account = useCurrentAccount();
   const { handleConnect } = useConnection();
 
   const { data: rule, isLoading, isFetching, refetch } = useTollRule(rawRuleId);
-  const { assembly: currentGateAssembly, loading: isGateLoading } =
-    useSmartObject();
+  console.log("rule = ", rule);
+  const {
+    loading: isGateLoading,
+    error: gateError,
+  } = useSmartObject();
+  const { isConnected } = useConnection();
   const { signAndExecuteTransaction } = useDAppKit();
 
   const [isPaying, setIsPaying] = useState(false);
   const [paid, setPaid] = useState(false);
   const [characterIdInput, setCharacterIdInput] = useState("");
+  const [isLoadingCharacter, setIsLoadingCharacter] = useState(false);
+
+  useEffect(() => {
+    async function fetchCharacter() {
+      if (!account?.address) return;
+
+      setIsLoadingCharacter(true);
+      try {
+        const response = await getWalletCharacters(account.address);
+        const nodes = response.data?.address?.objects?.nodes || [];
+
+        if (nodes.length > 0) {
+          const charJson =
+            nodes[0]?.contents?.extract?.asAddress?.asObject?.asMoveObject
+              ?.contents?.json;
+          if (charJson) {
+            const character = parseCharacterFromJson(charJson);
+            if (character?.id) {
+              setCharacterIdInput(character.id);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch character:", error);
+      } finally {
+        setIsLoadingCharacter(false);
+      }
+    }
+
+    fetchCharacter();
+  }, [account?.address]);
 
   const formatObjectId = (id: string) => {
     const clean = id?.trim?.() ?? "";
@@ -52,12 +93,14 @@ export function GatePayment() {
     return `https://suiscan.xyz/testnet/object/${rule.destinationGateId}`;
   }, [rule]);
 
-  const currentGateId = currentGateAssembly?.id;
+  const currentGateId = assemblyId || '';
+  console.log("currentGateId = ", currentGateId);
+  console.log("href = ", window.location.href);
 
   const directionText = useMemo(() => {
     if (!rule || !currentGateId) return null;
-    if (currentGateId === rule.sourceGateId) return "Gate1 → Gate2";
-    if (currentGateId === rule.destinationGateId) return "Gate2 → Gate1";
+    if (rule.sourceGateId.indexOf(currentGateId) !== -1) return "Gate1 → Gate2";
+    if (rule.destinationGateId.indexOf(currentGateId) !== -1) return "Gate2 → Gate1";
     return null;
   }, [currentGateId, rule]);
 
@@ -66,7 +109,9 @@ export function GatePayment() {
   const handlePayToll = async () => {
     if (!rule || !account) return;
     if (isGateMismatch) {
-      toast.error(`The current star gate does not belong to the rule ${rawRuleId} and cannot sell tickets.`);
+      toast.error(
+        `The current star gate does not belong to the rule ${rawRuleId} and cannot sell tickets.`,
+      );
       return;
     }
     if (!characterIdInput.trim()) {
@@ -82,14 +127,18 @@ export function GatePayment() {
 
       const feeAmountMist = tx.pure.u64(rule.feeAmount);
       const [paymentCoin] = tx.splitCoins(tx.gas, [feeAmountMist]);
+      const sourceGate = rule.sourceGateId?.indexOf(currentGateId) !== -1 ? rule.sourceGateId : rule.destinationGateId;
+      const destinationGate = rule.sourceGateId === sourceGate ? rule.destinationGateId : rule.sourceGateId;
+      console.log("sourceGate = ", sourceGate);
+      console.log("destinationGate = ", destinationGate);
 
       tx.moveCall({
         target: `${PACKAGE_ID}::stargazer::pay_toll_and_jump`,
         arguments: [
           tx.object(rule.id),
           paymentCoin,
-          tx.object(rule.sourceGateId),
-          tx.object(rule.destinationGateId),
+          tx.object(sourceGate),
+          tx.object(destinationGate),
           tx.object(characterIdInput.trim()),
           tx.object("0x6"), // The Sui System Clock object ID is 0x6
         ],
@@ -137,7 +186,9 @@ export function GatePayment() {
               : "border-eve-white/20 text-eve-white/80 hover:bg-eve-white/5 hover:border-eve-white"
           }`}
         >
-          <RefreshCw className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`} />
+          <RefreshCw
+            className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`}
+          />
           {isFetching ? "REFRESHING..." : "REFRESH DATA"}
         </button>
         <span className="font-sans text-eve-white/40 text-xs">
@@ -205,7 +256,7 @@ export function GatePayment() {
               </div>
             </div>
 
-            <div className="flex flex-row align-center">
+            {/* <div className="flex flex-row align-center">
               <div className="flex items-center justify-between mt-0">
                 <span className="block text-eve-white/60 mb-0 text-xs font-mono uppercase tracking-widest mr-2">
                   Ticket Direction:
@@ -215,10 +266,10 @@ export function GatePayment() {
                 <span className="text-eve-white break-all font-mono text-xs mb-0">
                   {isGateLoading && !currentGateId
                     ? "Detecting current gate..."
-                    : directionText ?? "Unknown"}
+                    : (directionText ?? "Unknown")}
                 </span>
               </div>
-            </div>
+            </div> */}
 
             <div className="flex flex-row align-center">
               <div className="flex items-center justify-between mt-0">
@@ -307,7 +358,7 @@ export function GatePayment() {
           </div>
 
           <div className="flex flex-col gap-2">
-            <span className="text-eve-white/50 text-xs font-mono uppercase tracking-widest">
+            <span className="text-eve-white/60 text-xs font-mono uppercase tracking-widest">
               Required Transit Fee
             </span>
             <span className="font-bold text-4xl text-eve-green font-mono drop-shadow-[0_0_10px_rgba(189,255,0,0.3)]">
@@ -315,23 +366,36 @@ export function GatePayment() {
             </span>
           </div>
 
-          <div className="w-full flex flex-col gap-3">
-            <label className="text-xs font-mono tracking-widest text-eve-white/80 uppercase text-left">
-              Traveler Character ID <span className="text-eve-orange">*</span>
+          {/* <div className="w-full flex flex-col gap-3">
+            <label className="text-xs font-mono tracking-widest text-eve-white/80 uppercase text-left flex justify-between">
+              <span>
+                Traveler Character ID <span className="text-eve-orange">*</span>
+              </span>
+              {isLoadingCharacter && (
+                <span className="text-yellow-400 animate-pulse">
+                  Detecting...
+                </span>
+              )}
             </label>
             <input
               type="text"
               value={characterIdInput}
               onChange={(e) => setCharacterIdInput(e.target.value)}
-              placeholder="0x..."
-              className="w-full bg-black/50 border border-eve-white/20 text-eve-white font-mono text-sm p-4 focus:outline-none focus:border-eve-green transition-colors"
-            />
-          </div>
+              placeholder={
+                isLoadingCharacter
+                  ? "Detecting connected character..."
+                  : "0x..."
+              }
+              disabled={isLoadingCharacter}
+              className={`w-full bg-black/50 border border-eve-white/20 text-eve-white font-mono text-sm p-4 focus:outline-none focus:border-eve-green transition-colors ${isLoadingCharacter ? "opacity-50 cursor-not-allowed" : ""}`}
+            /> 
+          </div>*/}
 
           {isGateMismatch && (
             <div className="w-full p-4 border border-red-500/30 bg-red-500/10 text-left">
               <span className="text-red-400 text-xs font-mono tracking-widest">
-                The current star gate does not belong to the rule {rawRuleId}. Cannot sell tickets.
+                The current star gate does not belong to the rule {rawRuleId}.
+                Cannot sell tickets.
               </span>
             </div>
           )}
@@ -379,7 +443,7 @@ export function GatePayment() {
             </div>
           )}
 
-          <span className="mt-4 text-eve-white/30 text-[10px] font-mono tracking-widest">
+          <span className="mt-4 text-eve-white/60 text-[10px] font-mono tracking-widest">
             POWERED BY STARGAZER NETWORK
           </span>
         </div>
