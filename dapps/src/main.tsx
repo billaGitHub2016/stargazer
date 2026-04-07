@@ -7,6 +7,10 @@ import App from "./App.tsx";
 import { EveFrontierProvider } from "@evefrontier/dapp-kit";
 import { Theme } from "@radix-ui/themes";
 
+// import VConsole from 'vconsole';
+
+// const vConsole = new VConsole(); 
+
 const queryClient = new QueryClient();
 
 /** STEP 1 — EveFrontierProvider(queryClient) wraps App; composes QueryClientProvider (React Query), DAppKitProvider (Mysten Sui client + wallet), VaultProvider (EVE wallet/connection), SmartObjectProvider (GraphQL assembly/context), NotificationProvider (toasts). */

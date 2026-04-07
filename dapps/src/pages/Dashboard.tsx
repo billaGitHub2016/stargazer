@@ -9,6 +9,7 @@ import { PACKAGE_ID, WORLD_PACKAGE_ID } from "../config/constants";
 import { MIST_PER_SUI } from "@mysten/sui/utils";
 import { bcs } from "@mysten/sui/bcs";
 import toast from "react-hot-toast";
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Plus,
@@ -22,6 +23,8 @@ import {
   RefreshCw,
 } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
+import { getWalletCharacters } from "@evefrontier/dapp-kit/graphql";
+import { parseCharacterFromJson } from "@evefrontier/dapp-kit/utils";
 
 export function Dashboard() {
   const account = useCurrentAccount();
@@ -82,6 +85,35 @@ export function Dashboard() {
   const [gate2, setGate2] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [characterIdInput, setCharacterIdInput] = useState("");
+  const [isLoadingCharacter, setIsLoadingCharacter] = useState(false);
+
+  useEffect(() => {
+      async function fetchCharacter() {
+        if (!account?.address) return;
+  
+        setIsLoadingCharacter(true);
+        try {
+          const response = await getWalletCharacters(account.address);
+          const nodes = response.data?.address?.objects?.nodes || [];
+          
+          if (nodes.length > 0) {
+            const charJson = nodes[0]?.contents?.extract?.asAddress?.asObject?.asMoveObject?.contents?.json;
+            if (charJson) {
+              const character = parseCharacterFromJson(charJson);
+              if (character?.id) {
+                setCharacterIdInput(character.id);
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Failed to fetch character:", error);
+        } finally {
+          setIsLoadingCharacter(false);
+        }
+      }
+  
+      fetchCharacter();
+    }, [account?.address]);
 
   const client = new SuiJsonRpcClient({
     url: "https://fullnode.testnet.sui.io:443",
@@ -383,7 +415,14 @@ export function Dashboard() {
                     <input
                       type="number"
                       value={newFee}
-                      onChange={(e) => setNewFee(e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "" || Number(val) >= 0) {
+                          setNewFee(val);
+                        }
+                      }}
+                      min="0"
+                      step="0.01"
                       placeholder="0.00"
                       className="w-full bg-black/50 border border-eve-white/20 text-eve-white font-mono text-lg p-4 focus:outline-none focus:border-eve-green transition-colors"
                     />
@@ -423,7 +462,7 @@ export function Dashboard() {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-eve-white/10">
+                {/* <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-eve-white/10">
                   <label className="text-xs font-mono tracking-widest text-eve-white/80 uppercase flex items-center justify-between">
                     <span>
                       Character ID <span className="text-eve-orange">*</span>
@@ -454,7 +493,7 @@ export function Dashboard() {
                     </code>
                     .
                   </p>
-                </div>
+                </div> */}
                 <div className="flex flex-col gap-3">
                   <label className="text-xs font-mono tracking-widest text-eve-white/80 uppercase">
                     Description <span className="text-eve-orange">*</span>
@@ -663,7 +702,7 @@ export function Dashboard() {
                         label="Copy payment link"
                         onClick={() => {
                           const shortCode = encodeRuleId(rule.id);
-                          const url = `${window.location.origin}/gate/${shortCode}`;
+                          const url = `${window.location.origin}/gate?ruleId=${shortCode}`;
                           navigator.clipboard.writeText(url);
                           toast.success(
                             "Short Payment Link Copied to Clipboard!",
@@ -677,7 +716,7 @@ export function Dashboard() {
                         label="Open payment page"
                         onClick={() => {
                           const shortCode = encodeRuleId(rule.id);
-                          window.open(`/gate/${shortCode}`, "_blank");
+                          window.open(`/gate?ruleId=${shortCode}`, "_blank");
                         }}
                         className="p-2 border border-eve-white/20 text-eve-white hover:bg-eve-white/10 hover:border-eve-white transition-all"
                       >
