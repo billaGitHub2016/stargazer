@@ -29,7 +29,7 @@ builder-scaffold/
 │   ├── tailwind.config.js              # Tailwind 配置 (自定义 EVE 颜色与字体)
 │   └── package.json                    # 前端依赖配置
 │
-└── move-contracts/smart_gate_extension/# Sui Move 智能合约
+└── move-contracts/stargazer/           # Sui Move 智能合约
     ├── sources/
     │   ├── stargazer.move              # Stargazer 收费规则核心工厂合约
     │   └── ...                         # 游戏内的其他拓展合约
@@ -49,7 +49,7 @@ builder-scaffold/
 如果你希望将 Stargazer 合约部署到 Sui 测试网或主网：
 
 ```bash
-cd move-contracts/smart_gate_extension
+cd move-contracts/stargazer
 
 # 确保你的 Sui CLI 已经配置好网络并拥有足够的 Gas
 sui client publish --with-unpublished-dependencies --gas-budget 200000000
@@ -82,10 +82,18 @@ cd dapps
 npm run build
 ```
 
-## 🔗 在线预览
+## �️ 路径规划
+
+在未来的更新中，我们将扩展项目功能，支持更多复杂的游戏机制与组件控制：
+
+- **高级星门逻辑模板：** 添加更加复杂的星门通过控制逻辑模板，例如：白名单/黑名单系统、基于时间的通行权限、代币门槛控制等。
+- **炮塔控制功能：** 引入自动化防御炮塔的智能合约和前端管理界面，允许玩家配置攻击规则与运行模式。
+- **仓库管理功能：** 增加对游戏内仓库等 Assembly 的控制功能，实现物资的安全存储、库存管理及自动化交易物流体系。
+
+## �🔗 在线预览
 
 本项目的最新版本已自动部署至 Vercel，点击下方链接即可体验：
-👉 **[Stargazer DApp](https://traebuilder-scaffoldorr1.vercel.app/)**
+👉 **[Stargazer DApp](https://stargazer-eve.vercel.app/)**
 
 ## 📚 参考资料
 - [EVE Frontier 官方网站](https://evefrontier.com/en)

@@ -29,7 +29,7 @@ builder-scaffold/
 │   ├── tailwind.config.js              # Tailwind configuration (Custom EVE colors & fonts)
 │   └── package.json                    # Frontend dependencies
 │
-└── move-contracts/smart_gate_extension/# Sui Move Smart Contracts
+└── move-contracts/stargazer/           # Sui Move Smart Contracts
     ├── sources/
     │   ├── stargazer.move              # Core factory contract for Stargazer Toll Rules
     │   └── ...                         # Other game extension contracts
@@ -49,7 +49,7 @@ builder-scaffold/
 If you wish to deploy your own version of the Stargazer contract to the Sui network:
 
 ```bash
-cd move-contracts/smart_gate_extension
+cd move-contracts/stargazer
 
 # Ensure your Sui CLI is set to testnet/mainnet and has gas
 sui client publish --with-unpublished-dependencies --gas-budget 200000000
@@ -82,10 +82,18 @@ cd dapps
 npm run build
 ```
 
+## 🗺️ Roadmap
+
+In future updates, we plan to expand the functionality of this project to include more advanced game mechanics and assembly controls:
+
+- **Advanced Stargate Logic Templates:** Implement more complex passage control logic templates, such as whitelist/blacklist systems, time-based access, and token-gated passage.
+- **Turret Assembly Control:** Add smart contract and UI interfaces for managing automated defense turrets, allowing players to configure targeting rules and operational modes.
+- **Warehouse Management:** Introduce assembly control features for in-game warehouses, enabling secure storage, inventory management, and automated trading logistics.
+
 ## 🔗 Live Preview
 
 The latest version of this project is deployed on Vercel:
-👉 **[Stargazer DApp](https://traebuilder-scaffoldorr1.vercel.app/)**
+👉 **[Stargazer DApp](https://stargazer-eve.vercel.app/)**
 
 ## 📚 References
 - [EVE Frontier Official Site](https://evefrontier.com/en)
