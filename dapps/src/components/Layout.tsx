@@ -3,6 +3,7 @@ import { useCurrentAccount } from "@mysten/dapp-kit-react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Hexagon } from "lucide-react";
+import { Analytics } from "@vercel/analytics/react"
 
 export function Layout() {
   const { handleConnect, handleDisconnect } = useConnection();
@@ -69,6 +70,7 @@ export function Layout() {
           </motion.div>
         </AnimatePresence>
       </main>
+      <Analytics />
     </div>
   );
 }
